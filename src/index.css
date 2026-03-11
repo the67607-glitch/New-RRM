@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-brand-primary: #1A2F23; /* Deep Forest Green */
+  --color-brand-secondary: #C5A059; /* Muted Gold */
+  --color-bg-paper: #F9F8F6; /* Warm Off-White */
+  --color-ink: #141414;
+  --color-line: rgba(20, 20, 20, 0.08);
+}
+
+@layer base {
+  body {
+    @apply bg-bg-paper text-ink antialiased selection:bg-brand-secondary/30;
+    direction: rtl;
+    text-align: right;
+  }
+}
+
+@layer components {
+  .grid-container {
+    @apply border-x border-line max-w-7xl mx-auto min-h-screen relative;
+  }
+
+  .grid-row {
+    @apply border-b border-line py-16 px-6 md:px-12 relative overflow-hidden;
+  }
+
+  .grid-col {
+    @apply border-l border-line last:border-l-0;
+  }
+
+  .label-caps {
+    @apply text-[10px] uppercase tracking-[0.15em] font-bold text-ink/40 mb-4 block;
+  }
+
+  .btn-premium {
+    @apply bg-brand-primary text-white px-10 py-5 rounded-none font-bold transition-all hover:bg-brand-secondary hover:text-brand-primary active:scale-[0.98] relative overflow-hidden;
+  }
+
+  .btn-premium::after {
+    content: '';
+    @apply absolute inset-0 border border-white/10 pointer-events-none;
+  }
+
+  .glass-surface {
+    @apply bg-white/40 backdrop-blur-xl border border-white/20;
+  }
+}
+
+/* Custom animations */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slideUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg-paper);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-brand-primary);
+}
