@@ -17,8 +17,19 @@ export default defineConfig(({mode}) => {
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+      // Do not modify — file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
+      proxy: {
+        '/streampay-api': {
+          target: 'https://stream-app-service.streampay.sa',
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/streampay-api/, '/api'),
+          headers: {
+            'x-api-key': env.VITE_STREAM_X_API_KEY || '',
+            'Origin': 'https://stream-app-service.streampay.sa',
+          },
+        },
+      },
     },
   };
 });

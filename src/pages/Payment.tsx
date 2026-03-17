@@ -1,24 +1,31 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, CreditCard, ArrowRight, ShieldCheck, Lock } from 'lucide-react';
-import { SEPARATE_SERVICES, PACKAGES } from '../constants';
+import { AnimatePresence, motion } from 'motion/react';
+import { CreditCard, ArrowRight, ShieldCheck, Lock, Loader2, AlertCircle } from 'lucide-react';
+import { SEPARATE_SERVICES, PACKAGES, STREAMPAY_PRODUCT_IDS } from '../constants';
+import { useStreamPay } from '../hooks/useStreamPay';
 
 export const Payment: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const serviceTitle = searchParams.get('service');
-  const [formSubmitted, setFormSubmitted] = useState(false);
-  
-  const service = (SEPARATE_SERVICES.find(s => s.title === serviceTitle) || 
-                 PACKAGES.find(p => p.name === serviceTitle)) as any;
+
+  const service = (SEPARATE_SERVICES.find(s => s.title === serviceTitle) ||
+    PACKAGES.find(p => p.name === serviceTitle)) as any;
 
   const isPackage = PACKAGES.some(p => p.name === serviceTitle);
+
+  const productId = serviceTitle ? STREAMPAY_PRODUCT_IDS[serviceTitle] || '' : '';
+
+  const { pay, loading, error } = useStreamPay({
+    serviceName: isPackage ? `باقة ${service?.name}` : (service?.title || ''),
+    serviceDescription: service?.desc || '',
+    items: productId ? [{ product_id: productId, quantity: 1, coupons: [] }] : [],
+  });
+
+  const [customerName, setCustomerName] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -26,13 +33,14 @@ export const Payment: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setFormSubmitted(true);
-    setTimeout(() => {
-      // In a real app, we'd redirect or show a final success state
-    }, 5000);
+    pay({
+      name: customerName,
+      email: customerEmail,
+      phone: customerPhone,
+    });
   };
 
-  if (!service && !formSubmitted) {
+  if (!service) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="text-center">
@@ -46,7 +54,7 @@ export const Payment: React.FC = () => {
   return (
     <div className="min-h-screen bg-bg-subtle/30 pt-32 pb-20">
       <div className="max-w-5xl mx-auto px-6">
-        <button 
+        <button
           onClick={() => navigate('/')}
           className="flex items-center gap-2 text-ink-muted hover:text-brand-primary transition-colors mb-8 group"
         >
@@ -63,7 +71,7 @@ export const Payment: React.FC = () => {
                 {isPackage ? `باقة ${service?.name}` : service?.title}
               </h1>
               <p className="text-ink-muted leading-relaxed mb-8">{service?.desc}</p>
-              
+
               <div className="pt-8 border-t border-line">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-ink-muted">{isPackage ? "سعر الباقة السنوي" : "سعر الخدمة"}</span>
@@ -83,98 +91,96 @@ export const Payment: React.FC = () => {
             <div className="flex items-center gap-4 p-6 bg-brand-accent/5 border border-brand-accent/10 rounded-2xl">
               <ShieldCheck className="text-brand-accent shrink-0" size={24} />
               <p className="text-sm text-brand-primary font-medium">
-                جميع المعاملات المالية مشفرة وآمنة بنسبة 100% وفقاً للمعايير العالمية.
+                جميع المعاملات المالية مشفرة وآمنة بنسبة 100% عبر بوابة StreamPay المعتمدة.
               </p>
             </div>
           </div>
 
-          {/* Payment Form */}
+          {/* Customer Info Form */}
           <div className="lg:col-span-7">
             <div className="glass-card p-8 md:p-12 bg-white shadow-xl shadow-brand-primary/5">
-              <AnimatePresence mode="wait">
-                {formSubmitted ? (
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="text-center py-12"
-                  >
-                    <div className="w-20 h-20 bg-brand-accent/10 rounded-full flex items-center justify-center text-brand-accent mx-auto mb-8">
-                      <CheckCircle2 size={40} />
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-bold text-brand-primary flex items-center gap-3">
+                    <CreditCard className="text-brand-secondary" />
+                    <span>بيانات العميل</span>
+                  </h2>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-widest text-ink-muted">الاسم الكامل</label>
+                      <input
+                        required
+                        type="text"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        placeholder="أدخل اسمك الكامل"
+                        className="w-full bg-bg-subtle mt-3 border border-line rounded-xl p-4 focus:border-brand-secondary outline-none transition-all font-medium"
+                      />
                     </div>
-                    <h3 className="text-3xl font-bold text-brand-primary mb-4">تمت عملية الدفع بنجاح</h3>
-                    <p className="text-ink-muted text-lg mb-8">شكراً لثقتكم. سيتم تزويدكم بتفاصيل الخدمة عبر البريد الإلكتروني فوراً.</p>
-                    <button 
-                      onClick={() => navigate('/')}
-                      className="btn-primary py-3 px-10"
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-widest text-ink-muted">البريد الإلكتروني</label>
+                      <input
+                        required
+                        type="email"
+                        value={customerEmail}
+                        onChange={(e) => setCustomerEmail(e.target.value)}
+                        placeholder="example@domain.com"
+                        className="w-full bg-bg-subtle mt-3 border border-line rounded-xl p-4 focus:border-brand-secondary outline-none transition-all font-medium"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-widest text-ink-muted">رقم الجوال</label>
+                      <input
+                        required
+                        type="tel"
+                        value={customerPhone}
+                        onChange={(e) => setCustomerPhone(e.target.value)}
+                        placeholder="05XXXXXXXX"
+                        className="w-full bg-bg-subtle mt-3 border border-line rounded-xl p-4 focus:border-brand-secondary outline-none transition-all font-medium"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <AnimatePresence>
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm"
                     >
-                      العودة للرئيسية
-                    </button>
-                  </motion.div>
-                ) : (
-                  <form onSubmit={handleSubmit} className="space-y-8">
-                    <div className="space-y-6">
-                      <h2 className="text-2xl font-bold text-brand-primary flex items-center gap-3">
-                        <CreditCard className="text-brand-secondary" />
-                        <span>بيانات الدفع</span>
-                      </h2>
-                      
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold uppercase tracking-widest text-ink-muted">الاسم على البطاقة</label>
-                          <input required type="text" placeholder="أدخل الاسم كما هو مكتوب على البطاقة" className="w-full bg-bg-subtle border border-line rounded-xl p-4 focus:border-brand-secondary outline-none transition-all font-medium" />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold uppercase tracking-widest text-ink-muted">رقم البطاقة</label>
-                          <div className="relative">
-                            <input required type="text" placeholder="XXXX XXXX XXXX XXXX" className="w-full bg-bg-subtle border border-line rounded-xl p-4 focus:border-brand-secondary outline-none transition-all font-medium" />
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 flex gap-2">
-                              <div className="w-8 h-5 bg-gray-200 rounded"></div>
-                              <div className="w-8 h-5 bg-gray-200 rounded"></div>
-                            </div>
-                          </div>
-                        </div>
+                      <AlertCircle size={18} className="shrink-0" />
+                      <span>{error}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-widest text-ink-muted">تاريخ الانتهاء</label>
-                            <input required type="text" placeholder="MM / YY" className="w-full bg-bg-subtle border border-line rounded-xl p-4 focus:border-brand-secondary outline-none transition-all font-medium" />
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-widest text-ink-muted">رمز التحقق (CVV)</label>
-                            <input required type="text" placeholder="XXX" className="w-full bg-bg-subtle border border-line rounded-xl p-4 focus:border-brand-secondary outline-none transition-all font-medium" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-6 pt-6 border-t border-line">
-                      <h2 className="text-2xl font-bold text-brand-primary">بيانات التواصل</h2>
-                      <div className="grid md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold uppercase tracking-widest text-ink-muted">البريد الإلكتروني</label>
-                          <input required type="email" placeholder="example@domain.com" className="w-full bg-bg-subtle border border-line rounded-xl p-4 focus:border-brand-secondary outline-none transition-all font-medium" />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold uppercase tracking-widest text-ink-muted">رقم الجوال</label>
-                          <input required type="tel" placeholder="05XXXXXXXX" className="w-full bg-bg-subtle border border-line rounded-xl p-4 focus:border-brand-secondary outline-none transition-all font-medium" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <button type="submit" className="btn-primary w-full py-5 text-xl group">
-                      <span>تأكيد الدفع</span>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-primary w-full py-5 text-xl group disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>جاري التحويل لبوابة الدفع...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>متابعة الدفع</span>
                       <Lock className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                    </button>
-                    
-                    <div className="flex items-center justify-center gap-6 opacity-40 grayscale">
-                      <div className="h-8 w-12 bg-gray-300 rounded"></div>
-                      <div className="h-8 w-12 bg-gray-300 rounded"></div>
-                      <div className="h-8 w-12 bg-gray-300 rounded"></div>
-                    </div>
-                  </form>
-                )}
-              </AnimatePresence>
+                    </>
+                  )}
+                </button>
+
+                <p className="text-center text-xs text-ink-muted">
+                  سيتم تحويلك إلى بوابة StreamPay الآمنة لإتمام عملية الدفع
+                </p>
+              </form>
             </div>
           </div>
         </div>

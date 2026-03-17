@@ -4,15 +4,15 @@
  */
 
 import React from 'react';
-import { 
-  ShieldCheck, 
-  Users, 
-  Building2, 
-  TrendingUp, 
-  FileCheck, 
-  AlertCircle, 
-  Gavel, 
-  LogOut, 
+import {
+  ShieldCheck,
+  Users,
+  Building2,
+  TrendingUp,
+  FileCheck,
+  AlertCircle,
+  Gavel,
+  LogOut,
   ClipboardCheck,
   Fingerprint
 } from 'lucide-react';
@@ -86,4 +86,20 @@ export const SERVICE_OPTIONS = {
     { value: "استشارة مهنية مجانية", label: "استشارة مهنية مجانية" },
     { value: "طلب تقييم أولي", label: "طلب تقييم أولي" },
   ],
+};
+
+// Map each service/package name to its StreamPay product ID.
+// Replace the placeholder values with real product IDs from your StreamPay dashboard.
+export const STREAMPAY_PRODUCT_IDS: Record<string, string> = {
+  // Packages
+  "Shield": "0fc669f6-4302-434f-81e3-255c4d65a102",
+  "Fortify": "bcb6d324-93c2-48cb-80c0-d77b0df12abf",
+  "Citadel": "ae997c4e-dcc3-4a95-8535-0cb9b42034f9",
+  // Separate Services
+  "التنفيذ المالي": "33707c93-1953-48d7-ad2f-84a0a2329562",
+  "إخلاء مستأجر": "39cb0051-a11a-4662-bba9-60f48a82e689",
+  "الفحص الائتماني": "344fb7b6-0d19-44d4-94da-05ab3419efe3",
+  "الفحص الأمني": "4d04aef1-703f-4edf-bcc4-415bd83bc786",
+  "صياغة عقد تنفيذي": "12e0ef49-8cee-488b-bd33-960e759c10c8",
+  "توثيق عقد إيجار": "f9ae2fa0-620d-4456-8b41-0908bcb0514d",
 };
